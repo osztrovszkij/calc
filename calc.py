@@ -52,7 +52,7 @@ def primary():
     elif NUMBER == token.kind:
         return token.value
     elif SUB == token.value:
-        return - primary()
+        return -primary()
     elif ADD == token.value:
         return primary()
     else:
