@@ -103,7 +103,8 @@ def calculate():
         tf.putback(token)
         print(RESULT, statement())
 
-try:
-    calculate()
-except Exception as e:
-    print(e)
+if __name__ == '__main__':
+    try:
+        calculate()
+    except Exception as e:
+        print(e)
