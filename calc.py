@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import re
 
 PROMPT = '> '
@@ -6,7 +7,8 @@ RESULT = '='
 SEPARATOR = '\n'
 NUMBER = 'n'
 OPERATOR = 'o'
-PATTERN = '\s*(?:(\d+\.?\d+)|(.))'
+#PATTERN = '\s*(?:(\d+\.?\d+)|(.))'
+PATTERN = r'\s*(\d*\.?\d+|.)'
 ADD = '+'
 SUB = '-'
 MUL = '*'
@@ -32,8 +34,8 @@ class Tokenflow:
     def get(self):
         if not self.buffer:
             pattern = re.compile(PATTERN)
-            for number, operator in pattern.findall(input()):
-                self.buffer.append(Token(number or operator))
+            for value in pattern.findall(input()):
+                self.buffer.append(Token(value))
             self.buffer.append(Token(SEPARATOR))
         return self.buffer.pop(0)
     def putback(self, token):
@@ -61,7 +63,11 @@ def term():
     left = primary()
     token = tf.get()
     while True:
-        if MUL == token.value:
+        if LPAREN == token.value:
+            tf.putback(token)
+            left *= primary()
+            token = tf.get()
+        elif MUL == token.value:
             left *= primary()
             token = tf.get()
         elif DIV == token.value:
@@ -78,7 +84,7 @@ def expression():
     left = term()
     token = tf.get()
     while True:
-        if ADD == token.value: 
+        if ADD == token.value:
             left += term()
             token = tf.get()
         elif SUB == token.value:
