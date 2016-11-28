@@ -1,5 +1,6 @@
 #!/usr/bin/python
 import re
+import math
 
 PROMPT = '> '
 QUIT = 'q'
@@ -7,8 +8,9 @@ RESULT = '='
 SEPARATOR = '\n'
 NUMBER = 'n'
 OPERATOR = 'o'
-#PATTERN = '\s*(?:(\d+\.?\d+)|(.))'
-PATTERN = r'\s*(\d*\.?\d+|.)'
+CONSTANT = 'c'
+FUNCTION = 'f'
+PATTERN = r'\s*(\d*\.?\d+|[a-zA-Z][a-zA-Z0-9]+|.)'
 ADD = '+'
 SUB = '-'
 MUL = '*'
@@ -16,6 +18,9 @@ DIV = '/'
 MOD = '%'
 LPAREN = '('
 RPAREN = ')'
+FUNCTIONS = ['sin', 'cos']
+CONSTANTS = ['pi', 'e']
+OPERATORS = ['+', '-', '*', '/', '%', '^', '(', ')']
 
 class Token:
     def __init__(self, value):
@@ -26,7 +31,11 @@ class Token:
             float(value)
             return NUMBER
         except ValueError:
-            return OPERATOR
+            if value in OPERATORS: return OPERATOR
+            if value in FUNCTIONS: return FUNCTION
+            if value in CONSTANTS: return CONSTANT
+            if value in [QUIT, SEPARATOR]: return value
+            raise Exception('BAD_TOKEN')
 
 class Tokenflow:
     def __init__(self):
@@ -40,6 +49,8 @@ class Tokenflow:
         return self.buffer.pop(0)
     def putback(self, token):
         self.buffer.insert(0, token)
+    def clear(self):
+        self.buffer.clear()
 
 tf = Tokenflow()
 
@@ -50,8 +61,18 @@ def primary():
         token = tf.get()
         if token.value != RPAREN: print(RPAREN, 'expected')
         return d
+    elif FUNCTION == token.kind:
+        func = token.value
+        token = tf.get()
+        if LPAREN == token.value:
+            d = expression()
+            token = tf.get()
+            if token.value != RPAREN: raise Exception(RPAREN + ' EXPECTED')
+            return eval('math.' + func + '(' + str(d) + ')')
     elif NUMBER == token.kind:
         return token.value
+    elif CONSTANT == token.kind:
+        return eval('math.' + token.value)
     elif SUB == token.value:
         return -primary()
     elif ADD == token.value:
@@ -94,22 +115,18 @@ def expression():
             tf.putback(token)
             return left
 
-def statement():
-    t = tf.get()
-    tf.putback(t)
-    return expression()
-
 def calculate():
     while True:
-        print(PROMPT, end='')
-        token = tf.get()
-        while token.value == SEPARATOR: token = tf.get()
-        if token.value == QUIT: return
-        tf.putback(token)
-        print(RESULT, statement())
+        try:
+            print(PROMPT, end='')
+            token = tf.get()
+            while token.value == SEPARATOR: token = tf.get()
+            if token.value == QUIT: return
+            tf.putback(token)
+            print(RESULT, expression())
+        except Exception as e:
+            print(e)
+            tf.clear()
 
 if __name__ == '__main__':
-    try:
         calculate()
-    except Exception as e:
-        print(e)
