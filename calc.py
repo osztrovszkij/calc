@@ -16,11 +16,11 @@ SUB = '-'
 MUL = '*'
 DIV = '/'
 MOD = '%'
+EXPO = '^'
 LPAREN = '('
 RPAREN = ')'
-COMMA = ','
 FUNCTIONS = {'sin': math.sin, 'cos': math.cos, 'asin': math.asin, 'acos': math.acos,
-        'atan': math.atan, 'exp': math.exp, 'fabs': math.fabs,
+        'atan': math.atan, 'exp': math.exp, 'fabs': math.fabs, 'abs': math.fabs,
         'floor': math.floor, 'log10': math.log10,'log2': math.log2, 'modf': math.modf,
         'tan': math.tan, 'sqrt': math.sqrt}
 CONSTANTS = {'pi': math.pi, 'e': math.e}
@@ -38,7 +38,7 @@ class Token:
             if value in OPERATORS: return OPERATOR
             if value in FUNCTIONS: return FUNCTION
             if value in CONSTANTS: return CONSTANT
-            if value in [QUIT, SEPARATOR, COMMA]: return value
+            if value in [QUIT, SEPARATOR]: return value
             raise Exception('BAD TOKEN')
 
 class Tokenflow:
@@ -71,7 +71,6 @@ def primary():
         token = tf.get()
         if LPAREN == token.value:
             d = expression()
-            print(d)
             token = tf.get()
             if token.value != RPAREN: raise Exception(RPAREN + ' EXPECTED')
             return FUNCTIONS[func](d)
@@ -83,8 +82,6 @@ def primary():
         return -primary()
     elif ADD == token.value:
         return primary()
-    elif COMMA == token.value:
-        return COMMA
     else:
         print(token.value)
         raise Exception('PRIMARY EXPECTED')
@@ -108,7 +105,7 @@ def term():
             left /= primary()
             token = tf.get()
         elif MOD == token.value:
-            left %= term()
+            left %= primary()
             token = tf.get()
         else:
             tf.putback(token)
