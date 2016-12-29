@@ -18,8 +18,8 @@ DIV = '/'
 MOD = '%'
 LPAREN = '('
 RPAREN = ')'
-FUNCTIONS = ['sin', 'cos']
-CONSTANTS = ['pi', 'e']
+FUNCTIONS = {'sin': math.sin, 'cos': math.cos}
+CONSTANTS = {'pi': math.pi, 'e': math.e}
 OPERATORS = ['+', '-', '*', '/', '%', '^', '(', ')']
 
 class Token:
@@ -35,15 +35,16 @@ class Token:
             if value in FUNCTIONS: return FUNCTION
             if value in CONSTANTS: return CONSTANT
             if value in [QUIT, SEPARATOR]: return value
-            raise Exception('BAD_TOKEN')
+            raise Exception('BAD TOKEN')
 
 class Tokenflow:
-    def __init__(self):
+    def __init__(self, reader):
         self.buffer = []
+        self.reader = reader
     def get(self):
         if not self.buffer:
             pattern = re.compile(PATTERN)
-            for value in pattern.findall(input()):
+            for value in pattern.findall(self.reader()):
                 self.buffer.append(Token(value))
             self.buffer.append(Token(SEPARATOR))
         return self.buffer.pop(0)
@@ -52,14 +53,14 @@ class Tokenflow:
     def clear(self):
         self.buffer.clear()
 
-tf = Tokenflow()
+tf = Tokenflow(input)
 
 def primary():
     token = tf.get()
     if LPAREN == token.value:
         d = expression()
         token = tf.get()
-        if token.value != RPAREN: print(RPAREN, 'expected')
+        if token.value != RPAREN: raise Exception(RPAREN + ' EXPECTED')
         return d
     elif FUNCTION == token.kind:
         func = token.value
@@ -72,19 +73,23 @@ def primary():
     elif NUMBER == token.kind:
         return token.value
     elif CONSTANT == token.kind:
-        return eval('math.' + token.value)
+        return CONSTANTS[token.value]
     elif SUB == token.value:
         return -primary()
     elif ADD == token.value:
         return primary()
     else:
-        print('primary expected')
+        raise Exception('PRIMARY EXPECTED')
 
 def term():
     left = primary()
     token = tf.get()
     while True:
         if LPAREN == token.value:
+            tf.putback(token)
+            left *= primary()
+            token = tf.get()
+        elif CONSTANT == token.kind or FUNCTION == token.kind or NUMBER == token.kind:
             tf.putback(token)
             left *= primary()
             token = tf.get()
@@ -130,3 +135,8 @@ def calculate():
 
 if __name__ == '__main__':
         calculate()
+else:
+    def calculate(expr):
+        global tf
+        tf = Tokenflow(lambda: expr.strip())
+        return expression()
