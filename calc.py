@@ -18,7 +18,11 @@ DIV = '/'
 MOD = '%'
 LPAREN = '('
 RPAREN = ')'
-FUNCTIONS = {'sin': math.sin, 'cos': math.cos}
+COMMA = ','
+FUNCTIONS = {'sin': math.sin, 'cos': math.cos, 'asin': math.asin, 'acos': math.acos,
+        'atan': math.atan, 'exp': math.exp, 'fabs': math.fabs,
+        'floor': math.floor, 'log10': math.log10,'log2': math.log2, 'modf': math.modf,
+        'tan': math.tan, 'sqrt': math.sqrt}
 CONSTANTS = {'pi': math.pi, 'e': math.e}
 OPERATORS = ['+', '-', '*', '/', '%', '^', '(', ')']
 
@@ -34,7 +38,7 @@ class Token:
             if value in OPERATORS: return OPERATOR
             if value in FUNCTIONS: return FUNCTION
             if value in CONSTANTS: return CONSTANT
-            if value in [QUIT, SEPARATOR]: return value
+            if value in [QUIT, SEPARATOR, COMMA]: return value
             raise Exception('BAD TOKEN')
 
 class Tokenflow:
@@ -67,9 +71,10 @@ def primary():
         token = tf.get()
         if LPAREN == token.value:
             d = expression()
+            print(d)
             token = tf.get()
             if token.value != RPAREN: raise Exception(RPAREN + ' EXPECTED')
-            return eval('math.' + func + '(' + str(d) + ')')
+            return FUNCTIONS[func](d)
     elif NUMBER == token.kind:
         return token.value
     elif CONSTANT == token.kind:
@@ -78,7 +83,10 @@ def primary():
         return -primary()
     elif ADD == token.value:
         return primary()
+    elif COMMA == token.value:
+        return COMMA
     else:
+        print(token.value)
         raise Exception('PRIMARY EXPECTED')
 
 def term():
